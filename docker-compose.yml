@@ -1,0 +1,96 @@
+version: '3.3'
+services:
+  db:
+    image: mariadb:latest
+    container_name: mariadb
+    hostname: mariadb
+    build:
+      context: mariadb
+      dockerfile: Dockerfile
+      args: 
+        USER_ID: ${USER_ID:-0}
+        GROUP_ID: ${GROUP_ID:-0}
+    environment:
+      - MYSQL_ROOT_PASSWORD=pwd
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./etc/tbc-db:/opt/tbc-db:rw
+      - ./etc/mangos-tbc:/opt/mangos-tbc:rw
+    restart: on-failure
+    tty: true
+
+  compile:
+    image: cmangos-tbc:compile
+    container_name: compile
+    build:
+      context: compile
+      dockerfile: Dockerfile
+      args: 
+        USER_ID: ${USER_ID:-0}
+        GROUP_ID: ${GROUP_ID:-0}
+    environment:
+      - TZ=Europe/Stockholm
+    volumes: 
+      - ./server:/opt/server:rw
+      - ./etc/mangos-tbc:/opt/mangos-tbc:rw
+    restart: on-failure
+    profiles:
+      - compile
+
+  mangosd: 
+    image: cmangos-tbc:mangosd
+    container_name: mangosd
+    hostname: mangosd
+    build:
+      context: mangosd
+      dockerfile: Dockerfile
+      args: 
+        USER_ID: ${USER_ID:-0}
+        GROUP_ID: ${GROUP_ID:-0}
+    environment:
+      - TZ=Europe/Stockholm
+    ports:
+      - "3443:3443"
+      - "8085:8085"
+      - "8086:8086" 
+    volumes: 
+      - "./server:/opt/server:rw" 
+    restart: on-failure
+
+  realmd:
+    image: cmangos-tbc:realmd
+    container_name: realmd
+    hostname: realmd
+    
+    build:
+      context: realmd
+      dockerfile: Dockerfile
+      args: 
+        USER_ID: ${USER_ID:-0}
+        GROUP_ID: ${GROUP_ID:-0}
+    environment:
+      - TZ=Europe/Stockholm
+    ports:
+      - "3724:3724"
+    volumes: 
+      - "./server:/opt/server:rw"
+    restart: on-failure
+
+  phpmyadmin:
+    image: phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=db
+      - PMA_USER=root
+      - PMA_PASSWORD=pwd
+    restart: "no"
+    depends_on:
+      - db
+    profiles:
+      - dev
+    
+networks:
+  default:
+    name: cmangos-tbc-network

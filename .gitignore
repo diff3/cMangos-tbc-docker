@@ -1,0 +1,4 @@
+server/*
+!server/README.md
+etc/*
+!etc/README.md
