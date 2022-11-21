@@ -32,7 +32,7 @@ cp mangosd.conf.dist mangosd.conf
 
 
 
-You need to add folders to the bin foler . Program for exctracting the data can be found in server/bin/tools folder. At the moment where is no docker container for automatecly extract the data.
+You need to add folders to the bin foler . Program for exctracting the data can be found in server/bin/tools folder. At the moment where is no docker container for automatecly extract the data. Se tutorial on [cmangos page](https://github.com/cmangos/issues/wiki/Installation-Instructions#extract-files-from-the-client) 
 
 
 
