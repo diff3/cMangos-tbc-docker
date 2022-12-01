@@ -1,6 +1,8 @@
-version: '3.3'
+version: '3.9'
+
 services:
-  db:
+
+  mariadb:
     image: mariadb:latest
     container_name: mariadb
     hostname: mariadb
@@ -22,9 +24,30 @@ services:
 
   compile:
     image: cmangos-tbc:compile
-    container_name: compile
+    env_file:
+      - ./compile/compile.env
+    container_name: tbc-compile
     build:
       context: compile
+      dockerfile: Dockerfile
+      args:
+        USER_ID: ${USER_ID:-0}
+        GROUP_ID: ${GROUP_ID:-0}
+    environment:
+      - TZ=Europe/Stockholm
+    volumes:
+      - ./server:/opt/server:rw
+      - ./etc/mangos-tbc:/opt/mangos-tbc:rw
+    restart: on-failure
+    tty: true
+
+  extract: 
+    image: cmangos-tbc:extract
+    env_file:
+      - ./extract/extract.env
+    container_name: tbc-extract
+    build:
+      context: extract
       dockerfile: Dockerfile
       args: 
         USER_ID: ${USER_ID:-0}
@@ -32,11 +55,10 @@ services:
     environment:
       - TZ=Europe/Stockholm
     volumes: 
-      - ./server:/opt/server:rw
-      - ./etc/mangos-tbc:/opt/mangos-tbc:rw
+      - "./server:/opt/server:rw" 
+      - "${WOW_PATH}:/opt/wow"
     restart: on-failure
-    profiles:
-      - compile
+    tty: true
 
   mangosd: 
     image: cmangos-tbc:mangosd
@@ -82,12 +104,10 @@ services:
     ports:
       - "8080:80"
     environment:
-      - PMA_HOST=db
+      - PMA_HOST=mariadb
       - PMA_USER=root
       - PMA_PASSWORD=pwd
     restart: "no"
-    depends_on:
-      - db
     profiles:
       - dev
     
