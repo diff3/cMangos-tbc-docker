@@ -1,3 +1,4 @@
+.DS_Store
 server/*
 !server/README.md
 etc/*
