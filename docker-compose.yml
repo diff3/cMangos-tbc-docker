@@ -2,28 +2,8 @@ version: '3.9'
 
 services:
 
-  mariadb:
-    image: mariadb:latest
-    container_name: mariadb
-    hostname: mariadb
-    build:
-      context: mariadb
-      dockerfile: Dockerfile
-      args: 
-        USER_ID: ${USER_ID:-0}
-        GROUP_ID: ${GROUP_ID:-0}
-    environment:
-      - MYSQL_ROOT_PASSWORD=pwd
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./etc/tbc-db:/opt/tbc-db:rw
-      - ./etc/mangos-tbc:/opt/mangos-tbc:rw
-    restart: on-failure
-    tty: true
-
   compile:
-    image: cmangos-tbc:compile
+    image: tbc-cmangos:compile
     env_file:
       - ./compile/compile.env
     container_name: tbc-compile
@@ -40,9 +20,9 @@ services:
       - ./etc/mangos-tbc:/opt/mangos-tbc:rw
     restart: on-failure
     tty: true
-
+  
   extract: 
-    image: cmangos-tbc:extract
+    image: tbc-cmangos:extract
     env_file:
       - ./extract/extract.env
     container_name: tbc-extract
@@ -61,9 +41,8 @@ services:
     tty: true
 
   mangosd: 
-    image: cmangos-tbc:mangosd
-    container_name: mangosd
-    hostname: mangosd
+    image: tbc-cmangos:mangosd
+    container_name: tbc-mangosd
     build:
       context: mangosd
       dockerfile: Dockerfile
@@ -80,11 +59,42 @@ services:
       - "./server:/opt/server:rw" 
     restart: on-failure
 
+  mariadb:
+    image: mariadb:latest
+    container_name: tbc-mariadb
+    hostname: mariadb
+    build:
+      context: mariadb
+      dockerfile: Dockerfile
+      args: 
+        USER_ID: ${USER_ID:-0}
+        GROUP_ID: ${GROUP_ID:-0}
+    environment:
+      - MYSQL_ROOT_PASSWORD=pwd
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./etc/tbc-db:/opt/tbc-db:rw
+      - ./etc/mangos-tbc:/opt/mangos-tbc:rw
+    restart: on-failure
+    tty: true
+  
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: tbc-phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=mariadb
+      - PMA_USER=root
+      - PMA_PASSWORD=pwd
+    restart: "no"
+    profiles:
+      - dev
+
   realmd:
-    image: cmangos-tbc:realmd
-    container_name: realmd
-    hostname: realmd
-    
+    image: tbc-cmangos:realmd
+    container_name: tbc-realmd
     build:
       context: realmd
       dockerfile: Dockerfile
@@ -99,18 +109,6 @@ services:
       - "./server:/opt/server:rw"
     restart: on-failure
 
-  phpmyadmin:
-    image: phpmyadmin
-    ports:
-      - "8080:80"
-    environment:
-      - PMA_HOST=mariadb
-      - PMA_USER=root
-      - PMA_PASSWORD=pwd
-    restart: "no"
-    profiles:
-      - dev
-    
 networks:
   default:
-    name: cmangos-tbc-network
+    name: tbc-server-network
