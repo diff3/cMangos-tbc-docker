@@ -1,2 +1,3 @@
 FROM mariadb:latest
-COPY entry.sh InstallFullDB.config /docker-entrypoint-initdb.d
+COPY --chmod=755 InstallFullDB.sh InstallFullDB.config /etc
+COPY --chmod=755 entry.sh /docker-entrypoint-initdb.d

@@ -61,6 +61,8 @@ services:
 
   mariadb:
     image: mariadb:latest
+    env_file:
+      - ./mariadb/mariadb.env
     container_name: tbc-mariadb
     hostname: mariadb
     build:
