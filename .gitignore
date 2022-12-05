@@ -1,5 +1,5 @@
 .DS_Store
 server/*
-!server/README.md
+!server/.gitkeep
 etc/*
-!etc/README.md
+!etc/.gitkeep
