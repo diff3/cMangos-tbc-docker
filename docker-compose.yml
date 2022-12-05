@@ -20,6 +20,8 @@ services:
       - ./etc/mangos-tbc:/opt/mangos-tbc:rw
     restart: on-failure
     tty: true
+    profiles:
+      - compile
   
   extract: 
     image: tbc-cmangos:extract
@@ -39,6 +41,8 @@ services:
       - "${WOW_PATH}:/opt/wow"
     restart: on-failure
     tty: true
+    profiles:
+      - extract
 
   mangosd: 
     image: tbc-cmangos:mangosd
@@ -60,7 +64,7 @@ services:
     restart: on-failure
 
   mariadb:
-    image: mariadb:latest
+    image: tbc-cmangos:mariadb
     env_file:
       - ./mariadb/mariadb.env
     container_name: tbc-mariadb
