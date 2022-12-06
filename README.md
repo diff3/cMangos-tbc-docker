@@ -6,7 +6,54 @@ This guide has been tested on MacOS Ventura and Debian 11, most steps work out t
 
 
 
-Two folder are empty then you download the repository, this because both **etc** and **server** folders are monted into the containers. So if you need to change something you can do that from your host, and just restart the containers. 
+Two folder are empty then you download the repository, this because both **etc** and **server** folders are monted into the containers. So if you need to change something you can do that from your host, and just restart the containers. Most directories got an env variable to make changes to the container. If 
+
+
+
+## Quickie
+
+
+
+Just a list of all commands belove, to get it up and running from zero.
+
+
+
+```bash
+git clone https://github.com/diff3/cMangos-tbc && cd cMangos-tbc
+cd etc && git clone https://github.com/cmangos/mangos-tbc
+git clone https://github.com/cmangos/tbc-db && cd ..
+
+# check .env for correct ID and client path
+docker-compose up compile # 20+ min
+docker-compose up extract # 20+ min
+docker-compose up -d mariadb # 5+ min
+# check docker logs <id> (docker ps to get id)
+
+# Start realmd, mangosd and mariadb (if needed)
+docker-compose up -d
+# First start is a bit slow. Next start will be ~10s
+docker-compose stop # stops all containers. 
+```
+
+
+
+Next to you want to start the server, just use. **docker-conpose up -d** it will not compile or extract, just running login-, game- and database servers. 
+
+
+
+### Some references
+
+```bash
+docker-compose down # shut down and remove all containers
+docker stop <ip> # shut down <id> container
+docker ps # show all running machines with ID
+docker system prune -a # deletes ALL containers and images NOT running. 
+docker-compose up -d <name> # start <name> from docker-compose.yml
+# -d means in background
+docker-compose rm # remove all created containers
+docker-compose build --no-cache # recompile images
+docker-compose up -d --force-recreate # recreate and start containers
+```
 
 
 
