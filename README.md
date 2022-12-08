@@ -6,7 +6,7 @@ This guide has been tested on MacOS Ventura and Debian 11, most steps work out t
 
 
 
-Two folder are empty then you download the repository, this because both **etc** and **server** folders are monted into the containers. So if you need to change something you can do that from your host, and just restart the containers. Most directories got an env variable to make changes to the container. If 
+Two folder are empty then you download the repository, this because both **etc** and **server** folders are monted into the containers. So if you need to change something you can do that from your host, and just restart the containers. Most containers got an env file. So you can make changes before starting the container. If you change something you need to rebuild the container.
 
 
 
@@ -23,36 +23,54 @@ git clone https://github.com/diff3/cMangos-tbc && cd cMangos-tbc
 cd etc && git clone https://github.com/cmangos/mangos-tbc
 git clone https://github.com/cmangos/tbc-db && cd ..
 
-# check .env for correct ID and client path
+# check .env for correct ID and the client path
 docker-compose up compile # 20+ min
 docker-compose up extract # 20+ min
+# Optional. Remove compile and extract containers.
+docker-compose down
+
+# Populate the database.
 docker-compose up -d mariadb # 5+ min
-# check docker logs <id> (docker ps to get id)
+# Check logs, Ctrl-c to stop checking
+docker-compose logs -f
+
+# Copy all conf.dist files to conf
+for i in server/etc/*.dist; do cp -- "$i" "${i%.conf.dist}.conf"; done
+
+# edit mangos.conf, otherwise mangos will shutdown after boot
+# you can do 'remote admin' with 'telnet localhost 3443'
+sed -i -e '/Console.Enable =/ s/=.*/= 0/' server/etc/mangosd.conf
+sed -i -e '/Ra.Enable =/ s/=.*/= 1/' server/etc/mangosd.conf
 
 # Start realmd, mangosd and mariadb (if needed)
 docker-compose up -d
-# First start is a bit slow. Next start will be ~10s
+# First time is a bit slow. Next start will be ~10s
 docker-compose stop # stops all containers. 
+# To start the server again
+docker-compose start
 ```
-
-
-
-Next to you want to start the server, just use. **docker-conpose up -d** it will not compile or extract, just running login-, game- and database servers. 
 
 
 
 ### Some references
 
 ```bash
-docker-compose down # shut down and remove all containers
+docker-compose down -h # shut down and remove all containers, network, volumes and images created by up.
+docker-compose rm # remove all created containers, images is untuched
 docker stop <ip> # shut down <id> container
+docker system prune -a # deletes EVERYTHING NOT running. Only use if nothing else works.
+
 docker ps # show all running machines with ID
-docker system prune -a # deletes ALL containers and images NOT running. 
+docker images # list all images created, both running and stoppped. 
+
 docker-compose up -d <name> # start <name> from docker-compose.yml
 # -d means in background
-docker-compose rm # remove all created containers
+
+# Rebuild 
 docker-compose build --no-cache # recompile images
 docker-compose up -d --force-recreate # recreate and start containers
+docker-compose logs -f # show's all logs for the started containers.
+
 ```
 
 
@@ -116,7 +134,7 @@ cMangos-tbc directory and subdirectories need to be owned by the same user you i
 
 
 The compile container will build everything needed to run the server. You can make some configurations in the **compile/compile.env** file. As default it will compile mangosd, realmd with playerbot and ahbot. It will also build all tools to extract data from the client. 
-    You can change how many cores your prosessor got on the env file. Default is 8. More cores means faster compile progress. In linux you can use **cat /proc/cpuinfo | grep "processor"| wc -l** to check how many cores you got.
+    You can change how many cores your prosessor got on the env file. Default is 8. More cores means faster compile time. In linux you can use **cat /proc/cpuinfo | grep "processor"| wc -l** to check how many cores you got.
 
 
 
@@ -183,4 +201,26 @@ Finaly we can start the server with. If you did't populate the database, it will
 
 ```bash
 docker-compose up -d
+```
+
+
+
+
+
+## Backup and restore
+
+
+
+
+
+```bash
+# Backup Account, Characters and Realmlist
+docker exec -it tbc-mariadb sh -c 'exec mysqldump -uroot -ppwd tbcrealmd realmlist account realmcharacters --single-transaction' > tbc_realmd_data.sql
+
+# Backup info about characters, will not include AH
+docker exec -it tbc-mariadb sh -c 'exec mysqldump -uroot -ppwd --ignore-table=tbccharacters.auction --ignore-table=tbccharacters.ahbot.items tbccharacters --single-transaction' > tbc_characters_data.sql
+
+# restore
+docker exec -i tbc-mariadb sh -c "mysql -uroot -ppwd tbcrealmd" < tbc_realmd_data.sql
+docker exec -i tbc-mariadb sh -c "mysql -uroot -ppwd tbccharacters" < tbc_characters_data.sql
 ```
