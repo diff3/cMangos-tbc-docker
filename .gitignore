@@ -3,3 +3,4 @@ server/*
 !server/.gitkeep
 etc/*
 !etc/.gitkeep
+sql.bk
